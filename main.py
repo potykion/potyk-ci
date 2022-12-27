@@ -1,16 +1,23 @@
-# This is a sample Python script.
+from pathlib import Path
+from time import sleep
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from potyk_ci_back.cases import CILoop
+from potyk_ci_back.db import ProjectRepo, create_tables
+from potyk_ci_back.models import Project
 
 
-# Press the green button in the gutter to run the script.
+def setup():
+    create_tables()
+    proj = Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve())
+    (repo := ProjectRepo()).save(proj)
+
+
+# setup()
+def main():
+    while True:
+        CILoop()()
+        sleep(1)
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main()

@@ -11,7 +11,6 @@ class CILoop:
     project_repo: ProjectRepo = dataclasses.field(default_factory=ProjectRepo)
     qa_job_repo: QAJobRepo = dataclasses.field(default_factory=QAJobRepo)
     git_repo: GitRepo = dataclasses.field(default_factory=GitRepo)
-    notif_repo: NotifRepo = dataclasses.field(default_factory=NotifRepo)
 
     def __call__(self):
         projects = self.project_repo.list()
@@ -21,14 +20,14 @@ class CILoop:
 
             last_job_run = self.qa_job_repo.last(proj)
             if not last_job_run or (self.git_repo.check_for_new(proj.path, last_job_run.created)):
-                job: QAJob = RunQA(proj)()
-                job = self.qa_job_repo.save(job)
-                self.notif_repo.send(job)
+                RunQA(proj)()
 
 
 @dataclasses.dataclass()
 class RunQA:
     proj: Project
+    qa_job_repo: QAJobRepo = dataclasses.field(default_factory=QAJobRepo)
+    notif_repo: NotifRepo = dataclasses.field(default_factory=NotifRepo)
 
     def __call__(self, ) -> QAJob:
         res = subprocess.run(
@@ -39,4 +38,7 @@ class RunQA:
             capture_output=True,
         )
         success = not bool(res.returncode)
-        return QAJob(success, res.stdout, project=self.proj)
+        job = QAJob(success, res.stdout, project=self.proj)
+        job = self.qa_job_repo.save(job)
+        self.notif_repo.send(job)
+        return job

@@ -40,6 +40,9 @@ class ProjectRepo:
             ).id
         )
 
+    def get(self, project_id):
+        return self.project_from_row(ProjectTable.get_by_id(project_id))
+
 
 class QAJobTable(Model):
     project = ForeignKeyField(ProjectTable)
@@ -63,13 +66,16 @@ class QAJobRepo:
         except DoesNotExist:
             return None
         else:
-            return QAJob(
-                success=row.success,
-                output=row.output,
-                project=ProjectRepo.project_from_row(row.project),
-                created=row.created,
-                id=row.id,
-            )
+            return self.qa_job_from_row(row)
+
+    def qa_job_from_row(self, row):
+        return QAJob(
+            success=row.success,
+            output=row.output,
+            project=ProjectRepo.project_from_row(row.project),
+            created=row.created,
+            id=row.id,
+        )
 
     def save(self, job: QAJob):
         return dataclasses.replace(
@@ -81,6 +87,14 @@ class QAJobRepo:
                 output=job.output,
             ).id,
         )
+
+    def list_for_project(self, project_id: int) -> List[QAJob]:
+        rows = (
+            QAJobTable.select()
+            .where(QAJobTable.project == project_id)
+            .order_by(QAJobTable.created.desc())
+        )
+        return list(map(self.qa_job_from_row, rows))
 
 
 class GitRepo:

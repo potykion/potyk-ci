@@ -5,7 +5,7 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <header>
-    potyk-ci
+    <router-link :to="{name: 'home'}">potyk-ci</router-link>
   </header>
 
   <RouterView />

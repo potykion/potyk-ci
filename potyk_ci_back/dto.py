@@ -41,3 +41,8 @@ class JobVM(BaseModel):
             created=job.created,
             id=job.id,
         )
+
+
+class Command(BaseModel):
+    command: str
+    path: Path

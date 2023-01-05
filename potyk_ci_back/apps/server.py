@@ -1,11 +1,12 @@
 from typing import List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from potyk_ci_back.cases import CreateProject, ScheduleJob
 from potyk_ci_back.db import ProjectRepo, JobRepo
-from potyk_ci_back.dto import ProjectVM, CreateProjectVM, JobVM
+from potyk_ci_back.dto import ProjectVM, CreateProjectVM, JobVM, Command
+from potyk_ci_back.utils import run_command_continuously
 
 app = FastAPI()
 
@@ -40,3 +41,15 @@ def create_project(vm: CreateProjectVM):
 def list_jobs_for_project(project_id: int):
     qa_jobs = JobRepo().list_for_project(project_id)
     return list(map(JobVM.from_model, qa_jobs))
+
+
+@app.websocket("/ws-run-step")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    while True:
+        data = await websocket.receive_text()
+        command = Command.parse_raw(data)
+
+        for line in run_command_continuously(command.command, command.path):
+            await websocket.send_text(line)

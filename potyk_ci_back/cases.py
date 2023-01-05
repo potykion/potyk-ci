@@ -6,6 +6,7 @@ from itertools import groupby
 from potyk_ci_back.db import ProjectRepo, JobRepo, GitRepo, NotifRepo, do_in_transaction
 from potyk_ci_back.dto import CreateProjectVM
 from potyk_ci_back.models import Project, Job, JobStatus
+from potyk_ci_back.utils import run_command
 
 
 @dataclasses.dataclass()
@@ -45,12 +46,9 @@ class RunJob:
     notif_repo: NotifRepo = dataclasses.field(default_factory=NotifRepo)
 
     def __call__(self, ) -> Job:
-        res = subprocess.run(
+        res = run_command(
+            self.job.project.path,
             self.job.project.command,
-            shell=True,
-            cwd=self.job.project.path,
-            text=True,
-            capture_output=True,
         )
 
         job = self.qa_job_repo.update(
@@ -62,6 +60,7 @@ class RunJob:
 
         self.notif_repo.send(job)
         return job
+
 
 
 @dataclasses.dataclass()

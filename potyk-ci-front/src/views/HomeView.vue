@@ -10,13 +10,13 @@ onMounted(() => projectStore.loadProjects());
 </script>
 
 <template>
-  <div>
-    <h1 >Projects</h1>
+  <v-container>
+    <h1>Projects</h1>
 
-    <details>
-      <summary>New Project</summary>
-      <ProjectForm></ProjectForm>
-    </details>
+<!--    <details>-->
+<!--      <summary>New Project</summary>-->
+<!--      <ProjectForm></ProjectForm>-->
+<!--    </details>-->
 
     <template v-if="projectStore.loadingProjects">Грузим проекты...</template>
     <template v-else>
@@ -29,5 +29,5 @@ onMounted(() => projectStore.loadProjects());
         </ul>
       </template>
     </template>
-  </div>
+  </v-container>
 </template>

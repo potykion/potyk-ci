@@ -31,7 +31,7 @@ const steps: Step[] = [
 
 const project = {
   name: 'automation-gae',
-  path: 'C:\\...',
+  path: 'C:\\Users\\potyk\\PycharmProjects\\automation-gae',
   steps,
 }
 
@@ -39,9 +39,11 @@ const project = {
 const conn = new WebSocket('ws://localhost:8000/ws-run-step');
 
 const selectedStep = ref<Step | null>(null);
+const selectedStepRunning = ref<boolean>(false);
 
 function run() {
-  output.value = '';
+  selectedStepRunning.value = true;
+  output.value = `Running ${selectedStep.value!.key}...\n`;
   conn.send(JSON.stringify({
     command: selectedStep.value!.command,
     path: project.path,
@@ -51,7 +53,13 @@ function run() {
 const output = ref('');
 
 onMounted(() => {
-  conn.onmessage = e => output.value += e.data;
+  conn.onmessage = e => {
+    let message = e.data;
+    output.value += `${message}\n`;
+    if (message === 'Done!') {
+      selectedStepRunning.value = false;
+    }
+  };
 })
 
 const toggleStep = (step: Step) => selectedStep.value = selectedStep.value?.key === step.key ? null : step;
@@ -86,16 +94,17 @@ const toggleStep = (step: Step) => selectedStep.value = selectedStep.value?.key 
           </template>
         </template>
         <v-btn v-if="!selectedStep.versions?.length || selectedStep.selectedVersions?.length" color="primary"
-               @click="run">
+               @click="run" :loading="selectedStepRunning">
           run
         </v-btn>
       </v-col>
 
     </v-row>
 
-    <v-row>
+    <v-row v-if="output">
       <v-col>
-        <v-code>{{ output }}</v-code>
+        <pre><v-code>{{ output }}</v-code></pre>
+
       </v-col>
     </v-row>
 

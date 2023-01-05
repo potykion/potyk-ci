@@ -53,3 +53,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
         for line in run_command_continuously(command.command, command.path):
             await websocket.send_text(line)
+
+        await websocket.send_text('Done!')

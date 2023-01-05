@@ -3,6 +3,7 @@ import os
 import subprocess
 
 from potyk_ci_back.db import ProjectRepo, QAJobRepo, GitRepo, NotifRepo
+from potyk_ci_back.dto import CreateProjectVM
 from potyk_ci_back.models import Project, QAJob
 
 
@@ -29,6 +30,10 @@ class RunQA:
     qa_job_repo: QAJobRepo = dataclasses.field(default_factory=QAJobRepo)
     notif_repo: NotifRepo = dataclasses.field(default_factory=NotifRepo)
 
+    @classmethod
+    def from_project_id(cls, proj_id):
+        return cls(ProjectRepo().get(proj_id))
+
     def __call__(self, ) -> QAJob:
         res = subprocess.run(
             self.proj.command,
@@ -42,3 +47,14 @@ class RunQA:
         job = self.qa_job_repo.save(job)
         self.notif_repo.send(job)
         return job
+
+
+@dataclasses.dataclass()
+class CreateProject:
+    vm: CreateProjectVM
+    project_repo: ProjectRepo = dataclasses.field(default_factory=ProjectRepo)
+
+    def __call__(self) -> Project:
+        return self.project_repo.save(
+            Project.guess(self.vm.path, name=self.vm.name)
+        )

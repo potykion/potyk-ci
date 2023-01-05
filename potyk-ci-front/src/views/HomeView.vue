@@ -1,15 +1,23 @@
 <script setup lang="ts">
 
 import {onMounted, ref} from "vue";
-import {useProjectStore} from "@/logic/stores";
+import {useProjectListStore} from "@/logic/stores";
+import ProjectForm from "@/components/ProjectForm.vue";
 
-let projectStore = useProjectStore();
+let projectStore = useProjectListStore();
 onMounted(() => projectStore.loadProjects());
 
 </script>
 
 <template>
-  <main>
+  <div>
+    <h1 >Projects</h1>
+
+    <details>
+      <summary>New Project</summary>
+      <ProjectForm></ProjectForm>
+    </details>
+
     <template v-if="projectStore.loadingProjects">Грузим проекты...</template>
     <template v-else>
       <template v-if="!projectStore.projects.length">Нет проектов 🤷‍♂️</template>
@@ -21,5 +29,5 @@ onMounted(() => projectStore.loadProjects());
         </ul>
       </template>
     </template>
-  </main>
+  </div>
 </template>

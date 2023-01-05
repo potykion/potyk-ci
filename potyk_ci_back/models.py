@@ -9,20 +9,21 @@ from typing import Optional
 class Project:
     path: Path
     command: str
+    name: str
     id: Optional[int] = None
 
-    @property
-    def name(self):
-        return self.path.name
-
     @classmethod
-    def guess(cls, path: Path):
-        if os.path.exists(path / 'pyproject.toml'):
-            return cls(path, 'poetry run pytest')
+    def guess(cls, path: Path, **kwargs):
+        name = kwargs.get('name', path.name)
 
-        venv_path = path / 'venv'
-        if os.path.exists(venv_path):
-            return cls(path, f"{venv_path / 'Scripts' / 'activate.bat'} && pytest")
+        if os.path.exists(path / 'pyproject.toml'):
+            command = 'poetry run pytest'
+        elif os.path.exists(venv_path := path / 'venv'):
+            command = f"{venv_path / 'Scripts' / 'activate.bat'} && pytest"
+        else:
+            raise ValueError(f'Хз что за проект такой 🤷‍♂️🤷‍♂️🤷‍♂️ ни venv, ни poetry: {path}')
+
+        return cls(path=path, command=command, name=name)
 
 
 @dataclasses.dataclass()

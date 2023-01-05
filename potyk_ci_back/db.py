@@ -15,6 +15,7 @@ db = SqliteDatabase('qa.db')
 class ProjectTable(Model):
     path = CharField()
     command = CharField()
+    name = CharField()
 
     class Meta:
         database = db
@@ -29,7 +30,12 @@ class ProjectRepo:
 
     @classmethod
     def project_from_row(cls, row):
-        return Project(path=Path(row.path).resolve(), command=row.command, id=row.id)
+        return Project(
+            path=Path(row.path).resolve(),
+            command=row.command,
+            id=row.id,
+            name=row.name,
+        )
 
     def save(self, project: Project):
         return dataclasses.replace(
@@ -37,6 +43,7 @@ class ProjectRepo:
             id=ProjectTable.create(
                 path=str(project.path),
                 command=project.command,
+                name=project.name,
             ).id
         )
 

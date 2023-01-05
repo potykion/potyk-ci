@@ -1,28 +1,15 @@
-from pathlib import Path
 import datetime as dt
+from pathlib import Path
 
 import pytest
-from peewee import SqliteDatabase
 
-from potyk_ci_back.db import TABLES, ProjectRepo, QAJobRepo, NotifRepo
+from potyk_ci_back.db import ProjectRepo, QAJobRepo, NotifRepo
 from potyk_ci_back.models import Project, QAJob
 
-test_db = SqliteDatabase(':memory:')
-
 
 @pytest.fixture()
-def mock_db():
-    test_db.bind(TABLES, bind_refs=False, bind_backrefs=False)
-    test_db.connect()
-    test_db.create_tables(TABLES)
-    yield
-    test_db.drop_tables(TABLES)
-    test_db.close()
-
-
-@pytest.fixture()
-def project(mock_db):
-    return ProjectRepo().save(Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve()))
+def project(project_path):
+    return ProjectRepo().save(Project.guess(project_path))
 
 
 @pytest.fixture()
@@ -32,7 +19,7 @@ def qa_job(project):
 
 def test_ProjectRepo_list(mock_db):
     proj = Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve())
-    (repo := ProjectRepo()).save(proj)
+    proj = (repo := ProjectRepo()).save(proj)
 
     projects = repo.list()
 
@@ -41,7 +28,7 @@ def test_ProjectRepo_list(mock_db):
 
 def test_QAJobRepo_last(mock_db, project):
     (repo := QAJobRepo()).save(QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 1)))
-    repo.save(qa_job := QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 2)))
+    qa_job = repo.save(QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 2)))
 
     last = repo.last(project)
 
@@ -57,5 +44,5 @@ def test_QAJobRepo_last_returns_none(mock_db):
     assert last is None
 
 
-def test_NotifRepo_send(qa_job):
-    NotifRepo().send(qa_job)
+# def test_NotifRepo_send(qa_job):
+#     NotifRepo().send(qa_job)

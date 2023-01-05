@@ -1,5 +1,6 @@
 import dataclasses
 import datetime as dt
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional, List
@@ -11,7 +12,7 @@ from peewee import *
 from potyk_ci_back.config import BASE_DIR
 from potyk_ci_back.models import Job, Project, JobStatus
 
-_db = SqliteDatabase(BASE_DIR / 'ci.db')
+_db = SqliteDatabase(BASE_DIR / f'{os.environ["COMPUTERNAME"]}.db')
 
 
 @contextmanager

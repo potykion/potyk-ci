@@ -1,0 +1,11 @@
+OPTIONS http://127.0.0.1:8000/project/list
+
+###
+
+POST http://127.0.0.1:8000/project/create
+Content-Type: application/json
+
+{
+  "path": "C:\\Users\\potyk\\PycharmProjects\\automation-gae",
+  "name": "automation-gae"
+}

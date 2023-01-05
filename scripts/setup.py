@@ -6,8 +6,10 @@ from potyk_ci_back.models import Project
 
 def setup():
     create_tables()
-    proj = Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve())
-    ProjectRepo().save(proj)
+    try:
+        ProjectRepo().save(Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve()))
+    except ValueError:
+        pass
 
 
 if __name__ == '__main__':

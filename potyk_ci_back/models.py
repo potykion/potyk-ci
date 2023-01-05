@@ -17,6 +17,9 @@ class Project:
 
     @classmethod
     def guess(cls, path: Path, **kwargs):
+        if not os.path.exists(path):
+            raise ValueError('Нет такого проекта')
+
         name = kwargs.get('name', path.name)
 
         if os.path.exists(path / 'pyproject.toml'):

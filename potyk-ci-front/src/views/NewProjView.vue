@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
 import {JobStatuses} from "@/logic/models";
-import {WebSocket} from "vite";
+import type {Dict} from "@/logic/core/types";
 
-interface Dict {
-  [key: string]: string
-}
 
 interface Step {
   key: string;
@@ -46,6 +43,7 @@ interface Command {
   commands: string[];
 }
 
+// @ts-ignore
 const conn = new WebSocket('ws://localhost:8000/ws-run-step');
 
 const selectedStep = ref<Step | null>(null);
@@ -112,21 +110,48 @@ const toggleStep = (step: Step) => selectedStep.value = selectedStep.value?.key 
     </v-row>
 
 
-    <v-row v-if="selectedStep">
-      <v-col>
-        <template v-if="selectedStep.versions?.length">
-          <template v-for="version in selectedStep.versions">
-            <v-checkbox hide-details :value="version" :label="version"
-                        v-model="selectedStep.selectedVersions"></v-checkbox>
-          </template>
-        </template>
-        <v-btn v-if="!selectedStep.versions?.length || selectedStep.selectedVersions?.length" color="primary"
-               @click="run" :loading="selectedStepRunning">
-          run
-        </v-btn>
-      </v-col>
+    <template v-if="selectedStep">
 
-    </v-row>
+
+      <v-row>
+        <v-col>
+          <template v-if="selectedStep.versions?.length">
+            Versions:
+            <template v-for="version in selectedStep.versions">
+              <v-checkbox hide-details :value="version" :label="version"
+                          v-model="selectedStep.selectedVersions"></v-checkbox>
+            </template>
+          </template>
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <v-code style="white-space: pre-line">
+            <template v-if="typeof selectedStep.command === 'string'">{{ selectedStep.command }}</template>
+            <template v-else >
+              {{
+                selectedStep.selectedVersions
+                    .map(v => selectedStep.command[v])
+                    .filter(c => c)
+                    .join('\n')
+                || 'Не нашлось'
+              }}
+            </template>
+          </v-code>
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col>
+          <v-btn :disabled="selectedStep.versions?.length && !selectedStep.selectedVersions?.length"
+                 color="primary"
+                 @click="run" :loading="selectedStepRunning">
+            run
+          </v-btn>
+        </v-col>
+      </v-row>
+    </template>
 
     <v-row v-if="output">
       <v-col>

@@ -1,11 +1,14 @@
 import dataclasses
 import datetime as dt
+import enum
 import os
 from pathlib import Path
 from typing import Optional
 
+from pydantic import BaseModel, Field
 
-@dataclasses.dataclass()
+
+@dataclasses.dataclass(frozen=True)
 class Project:
     path: Path
     command: str
@@ -26,10 +29,20 @@ class Project:
         return cls(path=path, command=command, name=name)
 
 
-@dataclasses.dataclass()
-class QAJob:
-    success: bool
-    output: str
+class JobStatus(str, enum.Enum):
+    DONE = 'DONE'
+    ERR = 'ERR'
+    PENDING = 'PENDING'
+    CANCELLED = 'CANCELLED'
+
+
+class Job(BaseModel):
+    output: str = ''
     project: Project
-    created: dt.datetime = dataclasses.field(default_factory=dt.datetime.now)
+    status: JobStatus = JobStatus.PENDING
+    created: dt.datetime = Field(default_factory=dt.datetime.now)
     id: Optional[int] = None
+
+    @property
+    def success(self):
+        return self.status == JobStatus.DONE

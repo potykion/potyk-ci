@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from potyk_ci_back.models import JobStatus
+
 
 class CreateProjectVM(BaseModel):
     path: Path
@@ -25,17 +27,17 @@ class ProjectVM(BaseModel):
         )
 
 
-class QAJobVM(BaseModel):
-    success: bool
+class JobVM(BaseModel):
+    status: JobStatus
     output: str
     created: dt.datetime
     id: int
 
     @classmethod
-    def from_model(cls, qa_job):
+    def from_model(cls, job):
         return cls(
-            success=qa_job.success,
-            output=qa_job.output,
-            created=qa_job.created,
-            id=qa_job.id,
+            status=job.status,
+            output=job.output,
+            created=job.created,
+            id=job.id,
         )

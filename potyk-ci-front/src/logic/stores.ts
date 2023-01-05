@@ -1,9 +1,10 @@
-import {ref} from 'vue'
+import {computed, ref} from 'vue'
 import {defineStore} from 'pinia'
 import type {Project} from "@/logic/models";
 import {mande} from "mande";
 import {BASE_URL} from "@/logic/config";
-import type {QAJob} from "@/logic/models";
+import type {Job} from "@/logic/models";
+import {JobVM} from "@/logic/vm";
 
 export const useProjectListStore = defineStore('project', () => {
     const projects = ref<Project[]>([]);
@@ -39,7 +40,11 @@ export const useProjectListStore = defineStore('project', () => {
 export const useSelectedProjectStore = defineStore('selected-project', () => {
     const selectedProj = ref<Project | null>(null);
     const loadingJobs = ref(false);
-    const selectedProjJobs = ref<QAJob[]>([]);
+    const _selectedProjJobs = ref<Job[]>([]);
+
+    const selectedProjJobs = computed(
+        () => _selectedProjJobs.value.map(j => new JobVM(j))
+    )
 
     const projectListStore = useProjectListStore();
 
@@ -53,16 +58,16 @@ export const useSelectedProjectStore = defineStore('selected-project', () => {
 
         try {
             const resp = await fetch(`http://127.0.0.1:8000/qa_job/list_for_project?project_id=${selectedProj.value!.id}`);
-            selectedProjJobs.value = await resp.json();
+            _selectedProjJobs.value = await resp.json();
         } finally {
             loadingJobs.value = false;
         }
     }
 
-    async function runJob() {
-        const resp = await fetch(`http://127.0.0.1:8000/project/run?project_id=${selectedProj.value!.id}`);
+    async function scheduleJob() {
+        const resp = await fetch(`http://127.0.0.1:8000/project/schedule?project_id=${selectedProj.value!.id}`);
         const job = await resp.json()
-        selectedProjJobs.value = [job, ...selectedProjJobs.value];
+        _selectedProjJobs.value = [job, ...selectedProjJobs.value];
     }
 
     return {
@@ -70,7 +75,7 @@ export const useSelectedProjectStore = defineStore('selected-project', () => {
         loadingJobs,
         selectedProjJobs,
         loadJobs,
-        runJob,
+        scheduleJob,
         select,
     }
 })

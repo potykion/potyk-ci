@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from potyk_ci_back.db import ProjectRepo, QAJobRepo, NotifRepo
-from potyk_ci_back.models import Project, QAJob
+from potyk_ci_back.db import ProjectRepo, JobRepo, NotifRepo
+from potyk_ci_back.models import Project, Job, JobStatus
 
 
 @pytest.fixture()
@@ -14,7 +14,7 @@ def project(project_path):
 
 @pytest.fixture()
 def qa_job(project):
-    return QAJobRepo().save(QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 1)))
+    return JobRepo().create(Job(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 1)))
 
 
 def test_ProjectRepo_list(mock_db):
@@ -27,22 +27,32 @@ def test_ProjectRepo_list(mock_db):
 
 
 def test_QAJobRepo_last(mock_db, project):
-    (repo := QAJobRepo()).save(QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 1)))
-    qa_job = repo.save(QAJob(success=True, output='ok', project=project, created=dt.datetime(2022, 12, 2)))
+    job_1 = (repo := JobRepo()).create(Job(project=project, created=dt.datetime(2022, 12, 1)))
+    job_2 = repo.create(Job(project=project, created=dt.datetime(2022, 12, 2)))
 
     last = repo.last(project)
 
-    assert last == qa_job
+    assert last == job_2
+
+
+def test_JobRepo_Update(project):
+    job = (repo := JobRepo()).create(Job(project=project, created=dt.datetime(2022, 12, 1)))
+
+    job = job.copy(update={'output': 'ok', 'status': JobStatus.DONE})
+    repo.update(job)
+
+    assert repo.get_by_id(job.id) == job
 
 
 def test_QAJobRepo_last_returns_none(mock_db):
     proj = Project.guess(Path(r'C:\Users\GANSOR\PycharmProjects\potyk-doc').resolve())
     proj = ProjectRepo().save(proj)
 
-    last = QAJobRepo().last(proj)
+    last = JobRepo().last(proj)
 
     assert last is None
 
 
-# def test_NotifRepo_send(qa_job):
-#     NotifRepo().send(qa_job)
+@pytest.mark.skip()
+def test_NotifRepo_send(qa_job):
+    NotifRepo().send(qa_job)

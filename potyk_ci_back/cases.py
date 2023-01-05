@@ -4,9 +4,9 @@ import subprocess
 from itertools import groupby
 
 from potyk_ci_back.db import ProjectRepo, JobRepo, GitRepo, NotifRepo, do_in_transaction
-from potyk_ci_back.dto import CreateProjectVM
+from potyk_ci_back.dto import CreateProjectVM, CommandVM
 from potyk_ci_back.models import Project, Job, JobStatus
-from potyk_ci_back.utils import run_command
+from potyk_ci_back.utils import run_command, run_command_continuously
 
 
 @dataclasses.dataclass()
@@ -62,7 +62,6 @@ class RunJob:
         return job
 
 
-
 @dataclasses.dataclass()
 class CreateProject:
     vm: CreateProjectVM
@@ -91,3 +90,39 @@ class ProcessPendingJobs:
                     self.job_repo.cancel(job)
 
                 RunJob(job_to_run)()
+
+
+@dataclasses.dataclass()
+class RunCommandsContinuously:
+    commands: list[str]
+    project: Project
+    job_repo: JobRepo = dataclasses.field(default_factory=JobRepo)
+
+    def __call__(self, *args, **kwargs):
+        output = ''
+        status: JobStatus
+
+        for command in self.commands:
+            yield command
+            for line, exited in run_command_continuously(command, self.project.path):
+                if line:
+                    yield line
+                    output += line
+                elif exited is False:
+                    status = JobStatus.from_bool(False)
+                    yield status
+                    break
+        else:
+            status = JobStatus.from_bool(True)
+            yield status
+
+        self.job_repo.create(Job(
+            output=output,
+            project=self.project,
+            status=status,
+        ))
+
+    @classmethod
+    def by_proj_id(cls, proj_id, commands):
+        proj = ProjectRepo().get(proj_id)
+        return cls(proj, commands)

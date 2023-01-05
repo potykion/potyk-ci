@@ -43,6 +43,6 @@ class JobVM(BaseModel):
         )
 
 
-class Command(BaseModel):
-    command: str
-    path: Path
+class CommandVM(BaseModel):
+    proj_id: int
+    commands: list[str]

@@ -38,6 +38,10 @@ class JobStatus(str, enum.Enum):
     PENDING = 'PENDING'
     CANCELLED = 'CANCELLED'
 
+    @classmethod
+    def from_bool(cls, bool_: bool):
+        return cls.DONE if bool_ else cls.ERR
+
 
 class Job(BaseModel):
     output: str = ''

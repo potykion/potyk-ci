@@ -1,4 +1,5 @@
 import subprocess
+from typing import Iterator, Optional, Tuple, Iterable
 
 
 def run_command(command, path=None):
@@ -11,7 +12,7 @@ def run_command(command, path=None):
     )
 
 
-def run_command_continuously(command, path=None):
+def run_command_continuously(command, path=None) -> Iterable[Tuple[Optional[str], Optional[bool]]]:
     proc = subprocess.Popen(
         command,
         shell=True,
@@ -23,6 +24,8 @@ def run_command_continuously(command, path=None):
     while True:
         line = proc.stdout.readline().strip()
         if line:
-            yield line
-        if proc.poll() is not None:
+            yield line, None
+        if (code := proc.poll()) is not None:
+            yield None, bool(code)
             break
+

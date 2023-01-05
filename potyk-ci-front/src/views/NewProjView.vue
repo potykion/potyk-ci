@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import * as path from "path";
+import {JobStatuses} from "@/logic/models";
+import {WebSocket} from "vite";
+
+interface Dict {
+  [key: string]: string
+}
 
 interface Step {
   key: string;
   name: string;
-  command: string | object;
+  command: string | Dict;
   depends?: string;
   versions?: string[];
   selectedVersions?: string[];
@@ -36,18 +41,40 @@ const project = {
 }
 
 
+interface Command {
+  proj_id: number;
+  commands: string[];
+}
+
 const conn = new WebSocket('ws://localhost:8000/ws-run-step');
 
 const selectedStep = ref<Step | null>(null);
 const selectedStepRunning = ref<boolean>(false);
 
 function run() {
+  let step: Step | null = selectedStep.value!;
+  let stepChain: Step[] = [step];
+  while (step?.depends) {
+    step = steps.find(s => s.key === step!.depends) ?? null;
+    if (step) stepChain = [step!, ...stepChain]
+  }
+
+  const commandChain: Command = {
+    commands: stepChain.flatMap(s => {
+      if (typeof s.command === 'string') {
+        return [s.command];
+      } else {
+        return s.selectedVersions!.map(v => (s.command as Dict)[v]);
+      }
+    }),
+    proj_id: project.id,
+  }
+
+
   selectedStepRunning.value = true;
+
   output.value = `Running ${selectedStep.value!.key}...\n`;
-  conn.send(JSON.stringify({
-    command: selectedStep.value!.command,
-    path: project.path,
-  }))
+  conn.send(JSON.stringify(commandChain))
 }
 
 const output = ref('');
@@ -56,7 +83,7 @@ onMounted(() => {
   conn.onmessage = e => {
     let message = e.data;
     output.value += `${message}\n`;
-    if (message === 'Done!') {
+    if (message === JobStatuses.DONE || message === JobStatuses.ERR) {
       selectedStepRunning.value = false;
     }
   };
